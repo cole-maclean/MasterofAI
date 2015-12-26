@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> /* set the CSS */
+
+body { font: 12px Arial;}
+
+.cat-label {
+  text-align: center;
+  align:middle;
+}
+
+path { 
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+</style>
+<body>
+
+<!-- load the d3.js library -->    
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="colorbrewer.js"></script>
+
+<script>
+
+// Set the dimensions of the canvas / graph
+var margin = {top: 30, right: 20, bottom: 30, left: 50},
+    width = 1400 - margin.left - margin.right,
+    kaggle_height = 250 - margin.top - margin.bottom
+    course_height = 400 - margin.top - margin.bottom;
+
+// Adds the base svg canvas
+var kaggle_svg = d3.select("body")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", kaggle_height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform", 
+              "translate(" + margin.left + "," + margin.top + ")");
+
+var course_svg = d3.select("body")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", course_height + margin.top + margin.bottom)
+// Parse the date / time
+var parseDate = d3.time.format("%d-%b-%y").parse
+
+// Set the ranges
+var x = d3.time.scale().range([0, width])
+        .domain([new Date(2015, 11, 01),new Date(2017, 07, 01)]);
+var y = d3.scale.linear().range([kaggle_height, 0]);
+
+function wrap(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
+
+function draw_linechart(data){
+    data.forEach(function(d) {
+        d.date = parseDate(d.date);
+    });
+
+    // Define the axes
+    var xAxis = d3.svg.axis().scale(x)
+        .orient("bottom").ticks(18);
+    var yAxis = d3.svg.axis().scale(y)
+        .orient("left").ticks(6);
+
+    // Define the line
+    var valueline = d3.svg.line()
+        .x(function(d) { return x(d.date); })
+        .y(function(d) { return y(d.PubLBPerc); });
+
+    // Scale the range of the data
+    
+    y.domain([0, d3.max(data, function(d) { return d.PubLBPerc; })]);
+
+    // Add the valueline path.
+    kaggle_svg.append("path")
+        .attr("class", "line")
+        .attr("d", valueline(data));
+
+    // Add the scatterplot
+    kaggle_svg.selectAll("dot")
+        .data(data)
+      .enter().append("circle")
+        .attr("r", 3.5)
+        .attr("cx", function(d) { return x(d.date); })
+        .attr("cy", function(d) { return y(d.PubLBPerc); });
+
+    // Add the X Axis
+    kaggle_svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + kaggle_height + ")")
+        .call(xAxis);
+
+    // Add the Y Axis
+    kaggle_svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+}
+
+function draw_courses(course_data){
+    var course_color = d3.scale.ordinal()
+        .domain(course_data.map( function (d) {return d.Category; }))
+        .range(colorbrewer.Pastel2[5]);
+    var course_height = 80
+    var course_margin = 10
+
+    var categories = d3.nest()
+      .key(function(d) { return d.Category; })
+      .entries(course_data);
+
+    var category_labels = course_svg.selectAll("cat-label")
+        .data(categories)
+        .enter().append("g")
+        .attr("transform","rotate(-90)")
+
+    category_labels.append("text")
+        .attr("class","cat-label")
+        .attr("dy",".35em")
+        .attr("transform", function(d,i) {return "translate(" + ((-i-1)*(course_height)+course_margin) + ",10)"; })
+        .text(function(d){return d.key});
+
+    category_labels.selectAll(".cat-label")
+        .call(wrap, course_height);
+
+    var course = course_svg.selectAll(".course")
+        .data(course_data)
+        .enter().append("g")
+        .attr("class", "course")
+        .attr("transform", function(d) {return "translate(" + x(parseDate(d.StartDate)) + "," + (d.CategoryIndex*course_height) + ")"; });
+
+    course.append("rect")
+        .attr("width",function(d){return (x(parseDate(d.EndDate))-x(parseDate(d.StartDate)))})
+        .attr("height",course_height-course_margin)
+        .attr("class","course_rect")
+        .attr("text",function(d){return d.CourseName})
+        //fill based on parent category
+        .style("fill", function(d) {return course_color(d.Category)})
+
+    course.append("foreignObject")
+        .append("xhtml:body")
+            .html(function(d){return '<div class=course-label>' + d.CourseName + '</div>'});
+}
+// Get the data
+d3.csv("kaggle_data.csv",draw_linechart)
+d3.csv("course_data.csv",draw_courses)
+</script>
+</body>
