@@ -1,8 +1,8 @@
-date,Contest,Type,Contestants,PubLBRank,PubLBPerc,PrivLBRank,PrivLBPerc,Tags
-20-Dec-15,Test Contest,Machine Learning,120,0,0,0,0,
-19-Jan-16,Test Contest,Machine Learning,120,36,0.7,54,0.55,
-18-Feb-16,Test Contest,Machine Learning,120,95,0.208333333,78,0.35,
-19-Mar-16,Test Contest,Machine Learning,120,103,0.141666667,12,0.9,
-18-Apr-16,Test Contest,Machine Learning,120,10,0.916666667,71,0.408333333,
-18-May-16,Test Contest,Machine Learning,120,65,0.458333333,22,0.816666667,
-17-Jun-16,Test Contest,Machine Learning,120,89,0.258333333,24,0.8,
+date,Contest,Type,Contestants,PubLBRank,PubLBPerc,PrivLBRank,PrivLBPerc,PubBlogLink,PrivBlogLink,Tags
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,

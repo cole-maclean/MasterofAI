@@ -10,7 +10,6 @@ body { font: 12px Arial;}
 }
 
 path { 
-    stroke: steelblue;
     stroke-width: 2;
     fill: none;
 }
@@ -36,15 +35,16 @@ path {
 var margin = {top: 30, right: 20, bottom: 30, left: 50},
     width = 1400 - margin.left - margin.right,
     kaggle_height = 250 - margin.top - margin.bottom
-    course_height = 400 - margin.top - margin.bottom;
+    course_height = 500 - margin.top - margin.bottom;
 
 var rect_height = 80
 var rect_margin = 10
 
-// Set the ranges
+// Set the ranges and scales
 var x = d3.time.scale().range([0, width])
-        .domain([new Date(2015, 11, 01),new Date(2017, 07, 01)]);
-var y = d3.scale.linear().range([kaggle_height, 0]);
+        .domain([new Date(2015, 11, 15),new Date(2017, 07, 01)]);
+var y = d3.scale.linear().range([kaggle_height, 0])
+        .domain([0,1]);
 
 // Adds the base svg canvas
 var kaggle_svg = d3.select("body")
@@ -100,26 +100,61 @@ function draw_linechart(data){
         .orient("left").ticks(6);
 
     // Define the line
-    var valueline = d3.svg.line()
+    var pubLB= d3.svg.line()
         .x(function(d) { return x(d.date); })
         .y(function(d) { return y(d.PubLBPerc); });
 
-    // Scale the range of the data
-    
-    y.domain([0, d3.max(data, function(d) { return d.PubLBPerc; })]);
+    var privLB= d3.svg.line()
+        .x(function(d) { return x(d.date); })
+        .y(function(d) { return y(d.PrivLBPerc); });
+
+
 
     // Add the valueline path.
     kaggle_svg.append("path")
-        .attr("class", "line")
-        .attr("d", valueline(data));
+        .attr("stroke","black")
+        .attr("stroke-width",2)
+        .attr("d", pubLB(data));
+
+    kaggle_svg.append("path")
+        .attr("stroke","blue")
+        .attr("stroke-width",2)
+        .attr("d", privLB(data));
 
     // Add the scatterplot
     kaggle_svg.selectAll("dot")
         .data(data)
-      .enter().append("circle")
+        .enter()
+        .append("a")
+            .attr("xlink:href", function(d) {if (d.PubBlogLink != "") {return d.PubBlogLink}})
+        .append("circle")
         .attr("r", 3.5)
+        .attr("fill",function(d){
+            if (d.PubBlogLink === ""){
+                return "black"
+            } else {
+                return "red"
+            }  
+        })
         .attr("cx", function(d) { return x(d.date); })
         .attr("cy", function(d) { return y(d.PubLBPerc); });
+
+    kaggle_svg.selectAll("dot")
+        .data(data)
+        .enter()
+        .append("a")
+            .attr("xlink:href", function(d) {if (d.PrivBlogLink != "") {return d.PrivBlogLink}})
+        .append("circle")
+        .attr("r", 3.5)
+        .attr("fill",function(d){
+            if (d.PrivBlogLink === ""){
+                return "blue"
+            } else {
+                return "red"
+            }  
+        })
+        .attr("cx", function(d) { return x(d.date); })
+        .attr("cy", function(d) { return y(d.PrivLBPerc); });
 
     // Add the X Axis
     kaggle_svg.append("g")
@@ -131,6 +166,53 @@ function draw_linechart(data){
     kaggle_svg.append("g")
         .attr("class", "y axis")
         .call(yAxis);
+
+var legend_margin = {top:15,left:10,right:5},
+    legend_x = width - 120,
+    legend_y = kaggle_height - 75;
+
+    kaggle_svg.append("rect")
+        .attr("height",55)
+        .attr("width",130)
+        .attr("stroke","black")
+        .attr("fill","none")
+        .attr("x",legend_x)
+        .attr("y",legend_y)
+        
+    kaggle_svg.append("circle")
+            .attr("r", 3.5)
+            .attr("cx",legend_x + legend_margin.left)
+            .attr("cy",legend_y + legend_margin.top)
+            .attr("fill","black")
+
+    kaggle_svg.append("circle")
+            .attr("r", 3.5)
+            .attr("cx",legend_x + legend_margin.left)
+            .attr("cy",legend_y + legend_margin.top*2)
+            .attr("fill","blue")
+
+    kaggle_svg.append("circle")
+            .attr("r", 3.5)
+            .attr("cx",legend_x + legend_margin.left)
+            .attr("cy",legend_y + legend_margin.top*3)
+            .attr("fill","red")
+
+    kaggle_svg.append("text")
+            .attr("x",legend_x + legend_margin.left + legend_margin.right)
+            .attr("y",legend_y + legend_margin.top)
+            .text("Public Leaderboard")
+
+    kaggle_svg.append("text")
+            .attr("x",legend_x + legend_margin.left + legend_margin.right)
+            .attr("y",legend_y + legend_margin.top*2)
+            .text("Private Leaderboard")
+
+    kaggle_svg.append("text")
+            .attr("x",legend_x + legend_margin.left + legend_margin.right)
+            .attr("y",legend_y + legend_margin.top*3)
+            .text("Blog Post")
+
+
 }
 
 function draw_courses(course_data){
@@ -163,7 +245,7 @@ function draw_courses(course_data){
         .data(course_data)
         .enter().append("g")
         .attr("class", "course")
-        .attr("transform", function(d) {return "translate(" + x(parseDate(d.StartDate)) + "," + (d.CategoryIndex*rect_height) + ")"; });
+        .attr("transform", function(d) {return "translate(" + (x(parseDate(d.StartDate))+rect_height-margin.top) + "," + (d.CategoryIndex*rect_height) + ")"; });
 
     course.append("rect")
         .attr("width",function(d){return (x(parseDate(d.EndDate))-x(parseDate(d.StartDate)))})
@@ -175,7 +257,7 @@ function draw_courses(course_data){
         .data(course_data)
         .enter().append("g")
         .attr("class", "course")
-        .attr("transform", function(d) {return "translate(" + x(parseDate(d.StartDate)) + "," + (d.CategoryIndex*rect_height) + ")"; });
+        .attr("transform", function(d) {return "translate(" + (x(parseDate(d.StartDate))+rect_height-margin.top) + "," + (d.CategoryIndex*rect_height) + ")"; });
 
     comp_course.append("rect")
         .attr("width",function(d){return (x(parseDate(d.EndDate))-x(parseDate(d.StartDate)))*d.Progress})
