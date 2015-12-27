@@ -38,6 +38,14 @@ var margin = {top: 30, right: 20, bottom: 30, left: 50},
     kaggle_height = 250 - margin.top - margin.bottom
     course_height = 400 - margin.top - margin.bottom;
 
+var rect_height = 80
+var rect_margin = 10
+
+// Set the ranges
+var x = d3.time.scale().range([0, width])
+        .domain([new Date(2015, 11, 01),new Date(2017, 07, 01)]);
+var y = d3.scale.linear().range([kaggle_height, 0]);
+
 // Adds the base svg canvas
 var kaggle_svg = d3.select("body")
     .append("svg")
@@ -51,13 +59,9 @@ var course_svg = d3.select("body")
     .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", course_height + margin.top + margin.bottom)
+
 // Parse the date / time
 var parseDate = d3.time.format("%d-%b-%y").parse
-
-// Set the ranges
-var x = d3.time.scale().range([0, width])
-        .domain([new Date(2015, 11, 01),new Date(2017, 07, 01)]);
-var y = d3.scale.linear().range([kaggle_height, 0]);
 
 function wrap(text, width) {
   text.each(function() {
@@ -133,8 +137,9 @@ function draw_courses(course_data){
     var course_color = d3.scale.ordinal()
         .domain(course_data.map( function (d) {return d.Category; }))
         .range(colorbrewer.Pastel2[5]);
-    var course_height = 80
-    var course_margin = 10
+    var comp_course_color = d3.scale.ordinal()
+        .domain(course_data.map( function (d) {return d.Category; }))
+        .range(colorbrewer.Set2[5]);
 
     var categories = d3.nest()
       .key(function(d) { return d.Category; })
@@ -148,32 +153,71 @@ function draw_courses(course_data){
     category_labels.append("text")
         .attr("class","cat-label")
         .attr("dy",".35em")
-        .attr("transform", function(d,i) {return "translate(" + ((-i-1)*(course_height)+course_margin) + ",10)"; })
+        .attr("transform", function(d,i) {return "translate(" + ((-i-1)*(rect_height)+rect_margin) + ",10)"; })
         .text(function(d){return d.key});
 
     category_labels.selectAll(".cat-label")
-        .call(wrap, course_height);
+        .call(wrap, rect_height);
 
     var course = course_svg.selectAll(".course")
         .data(course_data)
         .enter().append("g")
         .attr("class", "course")
-        .attr("transform", function(d) {return "translate(" + x(parseDate(d.StartDate)) + "," + (d.CategoryIndex*course_height) + ")"; });
+        .attr("transform", function(d) {return "translate(" + x(parseDate(d.StartDate)) + "," + (d.CategoryIndex*rect_height) + ")"; });
 
     course.append("rect")
         .attr("width",function(d){return (x(parseDate(d.EndDate))-x(parseDate(d.StartDate)))})
-        .attr("height",course_height-course_margin)
+        .attr("height",rect_height-rect_margin)
         .attr("class","course_rect")
-        .attr("text",function(d){return d.CourseName})
-        //fill based on parent category
         .style("fill", function(d) {return course_color(d.Category)})
+
+    var comp_course = course_svg.selectAll(".comp_course")
+        .data(course_data)
+        .enter().append("g")
+        .attr("class", "course")
+        .attr("transform", function(d) {return "translate(" + x(parseDate(d.StartDate)) + "," + (d.CategoryIndex*rect_height) + ")"; });
+
+    comp_course.append("rect")
+        .attr("width",function(d){return (x(parseDate(d.EndDate))-x(parseDate(d.StartDate)))*d.Progress})
+        .attr("height",rect_height-rect_margin)
+        .attr("class","comp_course_rect")
+        .style("fill", function(d) {return comp_course_color(d.Category)})
 
     course.append("foreignObject")
         .append("xhtml:body")
-            .html(function(d){return '<div class=course-label>' + d.CourseName + '</div>'});
+            .html(function(d){return '<a class=course-label href='+d.CourseLink + '>' + d.CourseName + '</div>'});
+    
+    comp_course.append("foreignObject")
+        .append("xhtml:body")
+            .html(function(d){return '<a class=course-label href='+d.CourseLink + '>' + d.CourseName + '</div>'});
+
+    draw_today()
+}
+
+function draw_today(){
+    var scaled_today = x(new Date())
+
+    kaggle_svg.append("line")
+    .attr("x1",scaled_today)
+    .attr("x2",scaled_today)
+    .attr("y1",0)
+    .attr("y2",kaggle_height)
+    .attr("stroke-width",2)
+    .style("stroke-dasharray", ("3, 3"))
+    .attr("stroke", "red");
+
+    course_svg.append("line")
+    .attr("x1",scaled_today+rect_height-margin.top)
+    .attr("x2",scaled_today+rect_height-margin.top)
+    .attr("y1",0)
+    .attr("y2",course_height + margin.top + margin.bottom)
+    .attr("stroke-width",2)
+    .style("stroke-dasharray", ("3, 3"))
+    .attr("stroke", "red");
 }
 // Get the data
 d3.csv("kaggle_data.csv",draw_linechart)
 d3.csv("course_data.csv",draw_courses)
+
 </script>
 </body>
