@@ -263,11 +263,11 @@ function draw_courses(course_data){
         .style("fill", function(d) {return comp_course_color(d.Category)})
 
     course.append("foreignObject")
-        .append("xhtml:body")
+        .append("xhtml:p")
             .html(function(d){return '<a class=course-label href='+d.CourseLink + '>' + d.CourseName + '</div>'});
     
     comp_course.append("foreignObject")
-        .append("xhtml:body")
+        .append("xhtml:p")
             .html(function(d){return '<a class=course-label href='+d.CourseLink + '>' + d.CourseName + '</div>'});
 
     draw_today()
