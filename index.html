@@ -35,7 +35,7 @@ path {
 var margin = {top: 30, right: 20, bottom: 30, left: 50},
     width = 1400 - margin.left - margin.right,
     kaggle_height = 250 - margin.top - margin.bottom
-    course_height = 500 - margin.top - margin.bottom;
+    course_height = 480 - margin.top - margin.bottom;
 
 var rect_height = 80
 var rect_margin = 10
@@ -107,7 +107,6 @@ function draw_linechart(data){
     var privLB= d3.svg.line()
         .x(function(d) { return x(d.date); })
         .y(function(d) { return y(d.PrivLBPerc); });
-
 
 
     // Add the valueline path.
@@ -211,8 +210,6 @@ var legend_margin = {top:15,left:10,right:5},
             .attr("x",legend_x + legend_margin.left + legend_margin.right)
             .attr("y",legend_y + legend_margin.top*3)
             .text("Blog Post")
-
-
 }
 
 function draw_courses(course_data){
