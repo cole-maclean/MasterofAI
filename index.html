@@ -21,14 +21,6 @@ path {
     stroke-width: 1;
     shape-rendering: crispEdges;
 }
-.foreignObject {
-    font: 9px sans-serif;
-    text-overflow: ellipsis;
-    text-align: left;
-    word-wrap: break-word;
-    height: 100px;
-    width: 100px;
-}
 </style>
 <body>
 
@@ -37,7 +29,6 @@ path {
 <script src="colorbrewer.js"></script>
 
 <script>
-
 // Set the dimensions of the canvas / graph
 var margin = {top: 30, right: 20, bottom: 30, left: 50},
     width = 1400 - margin.left - margin.right,
@@ -240,10 +231,8 @@ function draw_courses(course_data){
         .attr("class","cat-label")
         .attr("dy",".35em")
         .attr("transform", function(d,i) {return "translate(" + ((-i-1)*(rect_height)+rect_margin) + ",10)"; })
-        .text(function(d){return d.key});
-
-    category_labels.selectAll(".cat-label")
-        .call(wrap, rect_height);
+        .text(function(d){return d.key})
+        .call(wrap,rect_height);
 
     var course = course_svg.selectAll(".course")
         .data(course_data)
@@ -269,13 +258,14 @@ function draw_courses(course_data){
         .attr("class","comp_course_rect")
         .style("fill", function(d) {return comp_course_color(d.Category)})
 
-    course.append("foreignObject")
-        .append("xhtml:p")
-            .html(function(d){return '<a class=course-label href='+d.CourseLink + '>' + d.CourseName + '</div>'});
-    
-    comp_course.append("foreignObject")
-        .append("xhtml:p")
-            .html(function(d){return '<a class=course-label href='+d.CourseLink + '>' + d.CourseName + '</div>'});
+    var wrap_width = 120//handbombing wrap width not ideal...
+    comp_course.append("text")
+        .attr("y",rect_margin)
+        .append("a")
+            .attr("dy",".15em")
+            .attr("xlink:href", function(d){return d.CourseLink})
+        .text(function(d){return d.CourseName})
+        .call(wrap,wrap_width);
 
     draw_today()
 }
